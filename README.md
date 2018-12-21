@@ -1,74 +1,26 @@
-# CSX42: Assignment 1
-## Name: Mehul Bhuva
+APEX-Simulator
+A cycle-by-cycle simulator for an in-order APEX pipeline with three different function units.
+Summary
+The Integer FU has a latency of 1 cycle and implements all operations that involve integer arithmetic (ADD, SUB, ADDC, address computation of LOADs and STOREs etc.)
+The MUL (for multiply) instruction, which is a register-to-register instruction like the ADD, uses two pipeline stages in sequence, MUL1 and MUL2, each with a one cycle latency.
+The DIV ( for division ) instruction uses four pipeline stages in sequence
+Registers and Memory
+Registers Use of 16 architectural registers, R0 through R15.
 
------------------------------------------------------------------------
------------------------------------------------------------------------
+Memory Memory for data is viewed as a linear array of integer values (4 Bytes wide). Data memory ranges from 0 through 3999 and memory addresses correspond to a Byte address that begins the first Byte of the 4-Byte group that makes up a 4 Byte data item.
 
+Instruction Set:
+The instructions supported are:
+Register-to-register instructions: ADD, SUB, MUL, DIV, MOVC, AND, OR, EX-OR (all done on the Integer ALU).
+MOVC , moves literal value into specified register. The MOVC uses the ALU stages to add 0 to the literal and updates the destination register from the WB stage.
+Memory instructions: LOAD, STORE - both include a literal value whose content is added to a register to compute the memory address.
+Control flow instructions: BZ, BNZ, JUMP, JAL and HALT. Instructions following a BZ, BNZ, JAL and JUMP instruction in the pipeline will be flushed on a taken branch.
+Data Forwarding
+The forwarding happens at the end of the clock cycle when the instruction producing the results (including flag values) are in final stages of the respective FUs (integer, multiplier, divider). If the forwarded result(s) is/are the only source data that the instruction in D/RF was waiting for, it can be issued at the beginning of the clock cycle that immediately follows the one when forwarding took place.
 
-Following are the commands and the instructions to run ANT on your project.
-#### Note: build.xml is present in coursesRegistration/src folder.
+Forwarding bus This structure will store data forwarded from execute stage to decode stage. The stored data is then read in decode stage. The struct has 3 fields register number, value and status
 
------------------------------------------------------------------------
-## Instruction to clean:
-
-####Command: ant -buildfile coursesRegistration/src/build.xml clean
-
-Description: It cleans up all the .class files that were generated when you
-compiled your code.
-
------------------------------------------------------------------------
-## Instruction to compile:
-
-####Command: ant -buildfile coursesRegistration/src/build.xml all
-
-Description: Compiles your code and generates .class files inside the BUILD folder.
-
------------------------------------------------------------------------
-## Instruction to run:
-
-####Command: ant -buildfile coursesRegistration/src/build.xml run -Darg0=student_coursePref.txt -Darg1=courseInfo.txt -Darg2=registration_results.txt
-
-Note: Arguments accept the absolute path of the files.
-
-
------------------------------------------------------------------------
-## Description:
-
-Flow of the project
-
-1. Driver code excepts 3 arguments
-2. first two arguments should be two input files student_coursePrefs.txt and courseInfo.txt
-3. third argument should be the name of output file registration_results.txt
-4. Driver code than pass the argument to the fileprocessor which checks if file exists in the current directory or not
-5. If file found then function fileexists print file found otherwise not found
-6. Driver code then calls two function readstudent data and coursedata which returns hashmap of student data and course list
-7. Driver sends this objects to the scheduler and scheduler process it and allocate the courses and return student data
-8. Driver calls result using stdoutinterface and filedisplyinterface to print allocated course data on console and output file respectively
-
-Scheduler Algorithm:-
-
-1. Scheduler algorith iterates through hashmap of studentdetails 
-2. It checcks every student object in three passes
-3. First pass we check if preferences have any E or F courses in it then put it in wait queue
-4. Otherwise allocate first course to the students also check if course capacity is not full
-5. Second and third pass check for the time between courses and if courses are not allocated more than three for each student
-
-Time complexity :- O(n * n) 
-
-## References : 
-1. https://www.geeksforgeeks.org/sorting-a-hashmap-according-to-values/    (To sort the hashmap using comparator)
-2. https://stackoverflow.com/questions/4716503/reading-a-plain-text-file-in-java  (To read File using Scanner)
-
------------------------------------------------------------------------
-### Academic Honesty statement:
------------------------------------------------------------------------
-
-"I have done this assignment completely on my own. I have not copied
-it, nor have I given my solution to anyone else. I understand that if
-I am involved in plagiarism or cheating an official form will be
-submitted to the Academic Honesty Committee of the Watson School to
-determine the action that needs to be taken. "
-
-Date: 09/23/2018
-
-
+Working
+The project uses a bottom up approach, where writeback stage is executed first followed by memory , execute, decode and fetch.
+Each stage will have its own buffer space where it can store currently processed instruction.
+When a instruction enters into execute stage it will use the executer_buffer class array to append the current instruction in its first cycle. On the next cycle it will append another instruction ( if there is any ) to the array and send the instruction to memory stage based on priority , DIV -> MUL -> ALLOTHERINSTRUCTIONS.
